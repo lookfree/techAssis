@@ -1,0 +1,126 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--adm-color-background);
+}
+
+.layout-header {
+  flex-shrink: 0;
+  background-color: var(--adm-color-white);
+  border-bottom: 1px solid var(--adm-color-border);
+}
+
+.layout-navbar {
+  background-color: var(--adm-color-white);
+  --adm-color-text: var(--adm-color-primary);
+  --adm-font-weight: 600;
+}
+
+.layout-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background-color: var(--adm-color-background);
+}
+
+.layout-footer {
+  flex-shrink: 0;
+  background-color: var(--adm-color-white);
+  border-top: 1px solid var(--adm-color-border);
+}
+
+.layout-footer .adm-tab-bar {
+  background-color: var(--adm-color-white);
+  --adm-color-primary: #1677ff;
+}
+
+/* 设置面板样式 */
+.settings-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--adm-color-background);
+}
+
+.settings-header {
+  padding: 24px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.user-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.user-info {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.settings-footer {
+  margin-top: auto;
+  padding: 16px;
+  text-align: center;
+  color: var(--adm-color-text-secondary);
+  font-size: 12px;
+  border-top: 1px solid var(--adm-color-border);
+}
+
+.settings-footer p {
+  margin: 4px 0;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .layout {
+  background-color: #141414;
+}
+
+[data-theme="dark"] .layout-header,
+[data-theme="dark"] .layout-footer {
+  background-color: #1f1f1f;
+  border-color: #303030;
+}
+
+[data-theme="dark"] .layout-navbar {
+  background-color: #1f1f1f;
+  --adm-color-text: #fff;
+}
+
+[data-theme="dark"] .layout-footer .adm-tab-bar {
+  background-color: #1f1f1f;
+}
+
+[data-theme="dark"] .settings-panel {
+  background-color: #141414;
+}
+
+[data-theme="dark"] .settings-footer {
+  background-color: #1f1f1f;
+  border-color: #303030;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* 安全区域适配 */
+@supports (padding: max(0px)) {
+  .layout-footer {
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .settings-header {
+    padding: 20px 12px;
+  }
+
+  .user-name {
+    font-size: 16px;
+  }
+
+  .user-info {
+    font-size: 13px;
+  }
+}

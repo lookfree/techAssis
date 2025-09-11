@@ -1,0 +1,230 @@
+.attendance-page {
+  min-height: 100vh;
+  background-color: var(--adm-color-background);
+}
+
+.attendance-content {
+  padding: 0 16px 16px 16px;
+}
+
+/* 标签页样式 */
+.attendance-content .adm-tabs-header {
+  background-color: var(--adm-color-white);
+  border-radius: 8px;
+  margin: 16px 0;
+  padding: 4px;
+}
+
+/* 标签内容通用样式 */
+.tab-header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.tab-header h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--adm-color-text);
+  margin: 0 0 8px 0;
+}
+
+.tab-header p {
+  font-size: 14px;
+  color: var(--adm-color-text-secondary);
+  margin: 0;
+}
+
+/* 签到标签页 */
+.checkin-tab {
+  padding-bottom: 24px;
+}
+
+.course-checkin-card {
+  margin-bottom: 16px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.course-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.course-info {
+  flex: 1;
+}
+
+.course-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--adm-color-text);
+  margin-bottom: 8px;
+}
+
+.course-details {
+  font-size: 13px;
+  color: var(--adm-color-text-secondary);
+}
+
+.course-status {
+  flex-shrink: 0;
+}
+
+/* 签到方式 */
+.checkin-methods {
+  margin-top: 16px;
+}
+
+.checkin-method {
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  padding: 16px 8px;
+  border-radius: 8px;
+  background-color: var(--adm-color-fill-content);
+}
+
+.checkin-method:active {
+  transform: scale(0.95);
+  background-color: var(--adm-color-primary-light);
+}
+
+.method-icon {
+  font-size: 24px;
+  color: var(--adm-color-primary);
+  margin-bottom: 8px;
+}
+
+.method-text {
+  font-size: 12px;
+  color: var(--adm-color-text);
+  font-weight: 500;
+}
+
+/* 记录标签页 */
+.records-tab {
+  padding-bottom: 24px;
+}
+
+.records-tab .adm-list {
+  background-color: var(--adm-color-white);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.records-tab .adm-list-item {
+  padding: 16px;
+  border-bottom: 1px solid var(--adm-color-border);
+}
+
+.records-tab .adm-list-item:last-child {
+  border-bottom: none;
+}
+
+.attendance-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: white;
+}
+
+.attendance-icon.present {
+  background-color: #52c41a;
+}
+
+.attendance-icon.late {
+  background-color: #faad14;
+}
+
+.attendance-icon.absent {
+  background-color: #ff4d4f;
+}
+
+.attendance-icon.excused {
+  background-color: #d9d9d9;
+  color: #666;
+}
+
+.attendance-icon.leave_early {
+  background-color: #faad14;
+}
+
+.record-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--adm-color-text);
+  margin-bottom: 4px;
+}
+
+/* 空状态样式 */
+.adm-empty {
+  padding: 48px 16px;
+  text-align: center;
+}
+
+.adm-empty img {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 16px;
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .attendance-content .adm-tabs-header {
+  background-color: #1f1f1f;
+}
+
+[data-theme="dark"] .course-checkin-card {
+  background-color: #1f1f1f;
+  border-color: #303030;
+}
+
+[data-theme="dark"] .checkin-method {
+  background-color: #303030;
+}
+
+[data-theme="dark"] .checkin-method:active {
+  background-color: rgba(22, 119, 255, 0.2);
+}
+
+[data-theme="dark"] .records-tab .adm-list {
+  background-color: #1f1f1f;
+}
+
+[data-theme="dark"] .records-tab .adm-list-item {
+  border-color: #303030;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .attendance-content {
+    padding: 0 12px 12px 12px;
+  }
+
+  .course-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .course-name {
+    font-size: 15px;
+  }
+
+  .method-icon {
+    font-size: 20px;
+  }
+
+  .method-text {
+    font-size: 11px;
+  }
+
+  .record-title {
+    font-size: 15px;
+  }
+}

@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # 后端API服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartteacher-backend
+    environment:
+      NODE_ENV: production
+      DATABASE_HOST: 60.205.160.74:5432
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: uro@#wet8332@
+      DATABASE_NAME: smartteacher_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
+      REFRESH_TOKEN_SECRET: your-super-secret-refresh-token-key
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/logs:/app/logs
+    networks:
+      - smartteacher-network
+
+  # 教师端Web应用
+  frontend-teacher:
+    build:
+      context: ./frontend-teacher
+      dockerfile: Dockerfile
+    container_name: smartteacher-teacher-frontend
+    environment:
+      REACT_APP_API_URL: http://localhost:3000
+      REACT_APP_WS_URL: ws://localhost:3000
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+    networks:
+      - smartteacher-network
+
+  # 学生端PWA应用
+  frontend-student:
+    build:
+      context: ./frontend-student
+      dockerfile: Dockerfile
+    container_name: smartteacher-student-frontend
+    environment:
+      REACT_APP_API_URL: http://localhost:3000
+      REACT_APP_WS_URL: ws://localhost:3000
+    ports:
+      - "3002:80"
+    depends_on:
+      - backend
+    networks:
+      - smartteacher-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  smartteacher-network:
+    driver: bridge

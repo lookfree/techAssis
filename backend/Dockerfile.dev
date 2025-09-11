@@ -1,0 +1,20 @@
+# 开发环境Dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+# 安装开发依赖
+COPY package*.json ./
+RUN npm install
+
+# 复制源代码
+COPY . .
+
+# 创建必要目录
+RUN mkdir -p uploads temp logs public
+
+# 暴露端口
+EXPOSE 3000 9229
+
+# 开发模式启动
+CMD ["npm", "run", "start:debug"]

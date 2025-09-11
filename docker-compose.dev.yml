@@ -1,0 +1,108 @@
+# 开发环境Docker Compose配置
+version: '3.8'
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15
+    container_name: smartteacher-postgres-dev
+    environment:
+      POSTGRES_DB: smartteacher_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: uro@#wet8332@
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./backend/src/database/init:/docker-entrypoint-initdb.d
+    networks:
+      - smartteacher-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: smartteacher-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - smartteacher-network
+
+  # 后端开发服务
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: smartteacher-backend-dev
+    environment:
+      NODE_ENV: development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: uro@#wet8332@
+      DATABASE_NAME: smartteacher_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: dev-jwt-secret-key
+      REFRESH_TOKEN_SECRET: dev-refresh-token-secret
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # 调试端口
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./backend/uploads:/app/uploads
+      - ./backend/logs:/app/logs
+    networks:
+      - smartteacher-network
+    command: npm run start:debug
+
+  # 教师端开发服务
+  teacher-frontend-dev:
+    build:
+      context: ./frontend-teacher
+      dockerfile: Dockerfile.dev
+    container_name: smartteacher-teacher-frontend-dev
+    environment:
+      REACT_APP_API_URL: http://localhost:3000
+      REACT_APP_WS_URL: ws://localhost:3000
+      CHOKIDAR_USEPOLLING: true
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./frontend-teacher:/app
+      - /app/node_modules
+    networks:
+      - smartteacher-network
+    command: npm start
+
+  # 学生端开发服务
+  student-frontend-dev:
+    build:
+      context: ./frontend-student
+      dockerfile: Dockerfile.dev
+    container_name: smartteacher-student-frontend-dev
+    environment:
+      REACT_APP_API_URL: http://localhost:3000
+      REACT_APP_WS_URL: ws://localhost:3000
+      CHOKIDAR_USEPOLLING: true
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./frontend-student:/app
+      - /app/node_modules
+    networks:
+      - smartteacher-network
+    command: npm start
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  smartteacher-network:
+    driver: bridge

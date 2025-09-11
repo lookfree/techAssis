@@ -1,0 +1,527 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String         @id @default(cuid())
+  email           String         @unique
+  firstName       String         @map("first_name")
+  lastName        String         @map("last_name")
+  studentId       String?        @unique @map("student_id")
+  password        String
+  role            UserRole       @default(student)
+  isActive        Boolean        @default(true) @map("is_active")
+  avatar          String?
+  phone           String?
+  department      String?
+  major           String?
+  grade           String?
+  className       String?        @map("class_name")
+  classId         String?        @map("class_id")
+  studentClassId  String?        @map("student_class_id")
+  profile         Json?
+  settings        Json?
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  assignments     Assignment[]   @relation("TeacherAssignments")
+  attendances     Attendance[]   @relation("StudentAttendances")
+  teachingCourses Course[]       @relation("TeacherCourses")
+  enrollments     Enrollment[]   @relation("StudentEnrollments")
+  fileUploads     FileUpload[]   @relation("UserUploads")
+  gradedBy        Grade[]        @relation("GradedBy")
+  grades          Grade[]        @relation("StudentGrades")
+  notifications   Notification[] @relation("UserNotifications")
+  seatMaps        SeatMap[]      @relation("StudentSeats")
+  submissions     Submission[]   @relation("StudentSubmissions")
+  studentClass    StudentClass?  @relation("StudentClassMembers", fields: [studentClassId], references: [id])
+  operationLogs   OperationLog[] @relation("OperatorLogs")
+
+  @@map("users")
+}
+
+model Course {
+  id                String              @id @default(cuid())
+  name              String
+  courseCode        String              @unique @map("course_code")
+  description       String?
+  credits           Int                 @default(3)
+  semester          String
+  schedule          Json?
+  capacity          Int                 @default(50)
+  status            CourseStatus        @default(active)
+  pptFiles          Json?               @map("ppt_files")
+  requiresClassroom Boolean             @default(true) @map("requires_classroom")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  teacherId         String              @map("teacher_id")
+  assignments       Assignment[]        @relation("CourseAssignments")
+  attendances       Attendance[]        @relation("CourseAttendances")
+  sessions          AttendanceSession[] @relation("CourseSessions")
+  teacher           User                @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Cascade)
+  enrollments       Enrollment[]        @relation("CourseEnrollments")
+  classroomBookings ClassroomBooking[]  @relation("CourseBookings")
+
+  @@map("courses")
+}
+
+model Enrollment {
+  id             String   @id @default(cuid())
+  enrolledAt     DateTime @default(now()) @map("enrolled_at")
+  status         String   @default("active")
+  finalGrade     Float?   @map("final_grade")
+  attendanceRate Float?   @map("attendance_rate")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  studentId      String   @map("student_id")
+  courseId       String   @map("course_id")
+  course         Course   @relation("CourseEnrollments", fields: [courseId], references: [id], onDelete: Cascade)
+  student        User     @relation("StudentEnrollments", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@map("enrollments")
+}
+
+model Classroom {
+  id                 String             @id @default(cuid())
+  name               String
+  location           String?
+  building           String?
+  floor              String?
+  room               String?
+  capacity           Int
+  rows               Int
+  seatsPerRow        Int                @map("seats_per_row")
+  type               ClassroomType      @default(regular)
+  layout             String             @default("standard")
+  layoutConfig       Json?              @map("layout_config")
+  equipment          String[]           @default([])
+  facilities         String[]           @default([])
+  accessibleSeats    Int?               @map("accessible_seats")
+  isActive           Boolean            @default(true) @map("is_active")
+  backgroundImage    String?            @map("background_image")
+  seatMapEnabled     Boolean            @default(true) @map("seat_map_enabled")
+  freeSeatingEnabled Boolean            @default(true) @map("free_seating_enabled")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  templateId         String?            @map("template_id")
+  bookings           ClassroomBooking[] @relation("ClassroomBookings")
+  template           ClassroomTemplate? @relation("ClassroomInstances", fields: [templateId], references: [id])
+  seatMaps           SeatMap[]          @relation("ClassroomSeats")
+
+  @@map("classrooms")
+}
+
+model ClassroomTemplate {
+  id           String        @id @default(cuid())
+  name         String
+  type         ClassroomType
+  description  String?
+  capacity     Int
+  rows         Int
+  seatsPerRow  Int           @map("seats_per_row")
+  layoutConfig Json          @map("layout_config")
+  equipment    String[]      @default([])
+  facilities   String[]      @default([])
+  isDefault    Boolean       @default(false) @map("is_default")
+  isActive     Boolean       @default(true) @map("is_active")
+  previewImage String?       @map("preview_image")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  classrooms   Classroom[]   @relation("ClassroomInstances")
+
+  @@map("classroom_templates")
+}
+
+model ClassroomBooking {
+  id          String        @id @default(cuid())
+  classroomId String        @map("classroom_id")
+  courseId    String        @map("course_id")
+  teacherId   String        @map("teacher_id")
+  startTime   DateTime      @map("start_time")
+  endTime     DateTime      @map("end_time")
+  dayOfWeek   Int?          @map("day_of_week")
+  recurring   Boolean       @default(false)
+  status      BookingStatus @default(active)
+  purpose     String?
+  notes       String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  classroom   Classroom     @relation("ClassroomBookings", fields: [classroomId], references: [id], onDelete: Cascade)
+  course      Course        @relation("CourseBookings", fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([classroomId, startTime, endTime])
+  @@map("classroom_bookings")
+}
+
+model SeatMap {
+  id                  String     @id @default(cuid())
+  seatNumber          String     @map("seat_number")
+  row                 Int
+  column              Int
+  status              SeatStatus @default(available)
+  sessionDate         DateTime?  @map("session_date")
+  sessionNumber       String?    @map("session_number")
+  bookingId           String?    @map("booking_id")
+  selectedAt          DateTime?  @map("selected_at")
+  attendanceConfirmed Boolean    @default(false) @map("attendance_confirmed")
+  seatType            SeatType   @default(regular) @map("seat_type")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+  classroomId         String?    @map("classroom_id")
+  studentId           String?    @map("student_id")
+  classroom           Classroom? @relation("ClassroomSeats", fields: [classroomId], references: [id], onDelete: Cascade)
+  student             User?      @relation("StudentSeats", fields: [studentId], references: [id])
+
+  @@unique([classroomId, row, column, sessionDate, sessionNumber])
+  @@map("seat_maps")
+}
+
+model AttendanceSession {
+  id                   String        @id @default(cuid())
+  courseId             String        @map("course_id")
+  classroomId          String?       @map("classroom_id")
+  sessionDate          String        @map("session_date")
+  timeSlot             String        @map("time_slot")
+  sessionNumber        String        @map("session_number")
+  status               SessionStatus @default(active)
+  method               CheckInMethod @default(seat_selection) @map("method")
+  allowLateCheckin     Boolean       @default(true) @map("allow_late_checkin")
+  lateThresholdMinutes Int           @default(15) @map("late_threshold_minutes")
+  autoCloseMinutes     Int           @default(120) @map("auto_close_minutes")
+  totalStudents        Int           @default(0) @map("total_students")
+  checkedInStudents    Int           @default(0) @map("checked_in_students")
+  startTime            DateTime?     @map("start_time")
+  endTime              DateTime?     @map("end_time")
+  qrCode               String?       @map("qr_code")
+  verificationCode     String?       @map("verification_code")
+  geofence             Json?
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+  course               Course        @relation("CourseSessions", fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, sessionDate, timeSlot])
+  @@index([classroomId, startTime, endTime])
+  @@map("attendance_sessions")
+}
+
+model Attendance {
+  id            String           @id @default(cuid())
+  sessionDate   DateTime         @map("session_date")
+  sessionNumber Int              @map("session_number")
+  checkInTime   DateTime?        @map("check_in_time")
+  checkInMethod CheckInMethod?   @map("check_in_method")
+  seatNumber    Int?             @map("seat_number")
+  status        AttendanceStatus @default(absent)
+  notes         String?
+  ipAddress     String?          @map("ip_address")
+  deviceInfo    String?          @map("device_info")
+  location      Json?
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  studentId     String           @map("student_id")
+  courseId      String           @map("course_id")
+  course        Course           @relation("CourseAttendances", fields: [courseId], references: [id], onDelete: Cascade)
+  student       User             @relation("StudentAttendances", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId, sessionNumber])
+  @@map("attendance")
+}
+
+model Assignment {
+  id                  String           @id @default(cuid())
+  title               String
+  description         String?
+  instructions        String?
+  type                AssignmentType   @default(homework)
+  status              AssignmentStatus @default(draft)
+  totalPoints         Int              @default(100) @map("total_points")
+  dueDate             DateTime         @map("due_date")
+  allowLateSubmission Boolean          @default(false) @map("allow_late_submission")
+  maxAttempts         Int              @default(1) @map("max_attempts")
+  rubric              Json?
+  attachments         String[]         @default([])
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+  courseId            String           @map("course_id")
+  teacherId           String           @map("teacher_id")
+  course              Course           @relation("CourseAssignments", fields: [courseId], references: [id], onDelete: Cascade)
+  teacher             User             @relation("TeacherAssignments", fields: [teacherId], references: [id], onDelete: Cascade)
+  grades              Grade[]          @relation("AssignmentGrades")
+  submissions         Submission[]     @relation("AssignmentSubmissions")
+
+  @@map("assignments")
+}
+
+model Submission {
+  id              String           @id @default(cuid())
+  content         String?
+  fileUrls        String[]         @default([]) @map("file_urls")
+  submittedAt     DateTime         @map("submitted_at")
+  status          SubmissionStatus @default(pending)
+  attemptNumber   Int              @default(1) @map("attempt_number")
+  plagiarismScore Float?           @map("plagiarism_score")
+  wordCount       Int?             @map("word_count")
+  feedback        String?
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  studentId       String           @map("student_id")
+  assignmentId    String           @map("assignment_id")
+  grades          Grade[]          @relation("SubmissionGrades")
+  assignment      Assignment       @relation("AssignmentSubmissions", fields: [assignmentId], references: [id], onDelete: Cascade)
+  student         User             @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, assignmentId, attemptNumber])
+  @@map("submissions")
+}
+
+model Grade {
+  id           String      @id @default(cuid())
+  score        Float
+  maxScore     Float       @map("max_score")
+  percentage   Float?
+  feedback     String?
+  gradedAt     DateTime    @map("graded_at")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  studentId    String      @map("student_id")
+  assignmentId String      @map("assignment_id")
+  submissionId String?     @map("submission_id")
+  gradedBy     String      @map("graded_by")
+  assignment   Assignment  @relation("AssignmentGrades", fields: [assignmentId], references: [id], onDelete: Cascade)
+  grader       User        @relation("GradedBy", fields: [gradedBy], references: [id], onDelete: Cascade)
+  student      User        @relation("StudentGrades", fields: [studentId], references: [id], onDelete: Cascade)
+  submission   Submission? @relation("SubmissionGrades", fields: [submissionId], references: [id])
+
+  @@unique([studentId, assignmentId])
+  @@map("grades")
+}
+
+model Notification {
+  id        String               @id @default(cuid())
+  type      NotificationType
+  title     String
+  content   String
+  isRead    Boolean              @default(false) @map("is_read")
+  readAt    DateTime?            @map("read_at")
+  priority  NotificationPriority @default(medium)
+  data      Json?
+  expiresAt DateTime?            @map("expires_at")
+  createdAt DateTime             @default(now()) @map("created_at")
+  updatedAt DateTime             @updatedAt @map("updated_at")
+  userId    String               @map("user_id")
+  user      User                 @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model FileUpload {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String   @map("original_name")
+  path         String
+  size         Int
+  mimeType     String   @map("mime_type")
+  checksum     String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  uploaderId   String   @map("uploader_id")
+  uploader     User     @relation("UserUploads", fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@map("file_uploads")
+}
+
+enum UserRole {
+  super_admin
+  department_admin
+  teacher
+  student
+}
+
+enum AttendanceStatus {
+  present
+  late
+  absent
+  excused
+}
+
+enum CheckInMethod {
+  qr_code
+  verification_code
+  seat_selection
+  manual
+  face_recognition
+}
+
+enum AssignmentType {
+  homework
+  project
+  quiz
+  exam
+}
+
+enum AssignmentStatus {
+  draft
+  published
+  closed
+}
+
+enum SubmissionStatus {
+  pending
+  submitted
+  graded
+  returned
+}
+
+enum NotificationType {
+  assignment
+  grade
+  attendance
+  system
+  course
+}
+
+enum NotificationPriority {
+  low
+  medium
+  high
+}
+
+enum ClassroomType {
+  lecture_hall
+  regular
+  lab
+  seminar
+  computer
+  conference
+  auditorium
+}
+
+enum SeatStatus {
+  available
+  occupied
+  reserved
+  unavailable
+  maintenance
+}
+
+enum SeatType {
+  regular
+  wheelchair
+  front_priority
+  teacher_desk
+  vip
+  observer
+}
+
+enum BookingStatus {
+  active
+  pending
+  cancelled
+  completed
+  conflict
+}
+
+enum CourseStatus {
+  active
+  inactive
+  archived
+  draft
+  suspended
+}
+
+enum SessionStatus {
+  pending
+  active
+  paused
+  completed
+  cancelled
+}
+
+enum OperationType {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  IMPORT
+  EXPORT
+  BATCH_UPDATE
+  BATCH_DELETE
+  add_students_to_course
+  remove_students_from_course
+  batch_add_class_to_course
+  create_class
+  update_class
+  delete_class
+  add_students_to_class
+  remove_students_from_class
+}
+
+enum EnrollmentStatus {
+  pending
+  active
+  dropped
+  completed
+  failed
+}
+
+model StudentClass {
+  id          String   @id @default(cuid())
+  classCode   String   @unique @map("class_code")
+  className   String   @map("class_name")
+  grade       String
+  department  String
+  major       String
+  studentCount Int     @default(0) @map("student_count")
+  totalStudents Int    @default(0) @map("total_students")
+  classTeacher String? @map("class_teacher")
+  advisor     String?
+  description String?
+  enrollmentYear String? @map("enrollment_year")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  students    User[]   @relation("StudentClassMembers")
+
+  @@map("student_classes")
+}
+
+model OperationLog {
+  id           String    @id @default(cuid())
+  operatorId   String    @map("operator_id")
+  operatorName String    @map("operator_name")
+  operatorRole UserRole  @map("operator_role")
+  operationType OperationType @map("operation_type")
+  module       String
+  action       String
+  targetId     String?   @map("target_id")
+  targetType   String?   @map("target_type")
+  description  String
+  requestUrl   String?   @map("request_url")
+  requestMethod String?  @map("request_method")
+  requestBody  Json?     @map("request_body")
+  responseStatus Int?    @map("response_status")
+  beforeData   Json?     @map("before_data")
+  afterData    Json?     @map("after_data")
+  affectedIds  String[]  @default([]) @map("affected_ids")
+  details      Json?
+  notes        String?
+  ipAddress    String?   @map("ip_address")
+  userAgent    String?   @map("user_agent")
+  executionTime Int?    @map("execution_time")
+  errorMessage String?  @map("error_message")
+  success      Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  operator     User      @relation("OperatorLogs", fields: [operatorId], references: [id])
+
+  @@index([operatorId, createdAt])
+  @@index([module, action])
+  @@index([targetId, targetType])
+  @@map("operation_logs")
+}

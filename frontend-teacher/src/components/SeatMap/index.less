@@ -1,0 +1,627 @@
+// 🚀 赛博朋克风格座位图样式 v2.0.1 - CACHE BUSTER
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+// 主容器
+.seat-map-container {
+  font-family: 'Rajdhani', sans-serif;
+  background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #0f0f23 100%);
+  min-height: 100vh;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  
+  // 全屏模式
+  &.fullscreen-mode {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    width: 100vw;
+    height: 100vh;
+    padding: 32px;
+  }
+  
+  // 背景动画粒子
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      radial-gradient(circle at 25% 25%, #00ff41 0%, transparent 70%),
+      radial-gradient(circle at 75% 75%, #0080ff 0%, transparent 70%),
+      radial-gradient(circle at 50% 50%, #ff0080 0%, transparent 70%);
+    opacity: 0.1;
+    z-index: -1;
+    animation: backgroundPulse 8s ease-in-out infinite;
+  }
+}
+
+// 加载状态
+.seat-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f0f23 100%);
+  border-radius: 20px;
+  border: 2px solid rgba(0, 255, 65, 0.3);
+  
+  .ant-spin {
+    .ant-spin-text {
+      color: #00ff41;
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+    }
+    
+    .ant-spin-dot {
+      .ant-spin-dot-item {
+        background-color: #00ff41;
+        box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+      }
+    }
+  }
+}
+
+// 全息统计面板
+.holographic-dashboard {
+  background: linear-gradient(135deg, rgba(0, 255, 65, 0.1) 0%, rgba(0, 128, 255, 0.1) 100%);
+  border: 2px solid rgba(0, 255, 65, 0.3);
+  border-radius: 20px;
+  padding: 32px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 8px 32px rgba(0, 255, 65, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  
+  .dashboard-header {
+    text-align: center;
+    margin-bottom: 24px;
+    
+    .dashboard-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 32px;
+      font-weight: 900;
+      color: #00ff41;
+      text-shadow: 0 0 20px rgba(0, 255, 65, 0.8);
+      margin-bottom: 8px;
+      animation: titleGlow 2s ease-in-out infinite alternate;
+    }
+    
+    .dashboard-subtitle {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      text-shadow: 0 0 10px rgba(0, 128, 255, 0.5);
+    }
+  }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    
+    .stat-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+      }
+      
+      .stat-number {
+        font-family: 'Orbitron', monospace;
+        font-size: 42px;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 8px;
+      }
+      
+      .stat-label {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 16px;
+        font-weight: 500;
+        opacity: 0.8;
+      }
+      
+      .stat-glow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.1;
+        border-radius: 16px;
+        animation: statGlow 3s ease-in-out infinite alternate;
+      }
+      
+      &.occupied {
+        .stat-number { color: #00ff41; text-shadow: 0 0 15px rgba(0, 255, 65, 0.6); }
+        .stat-label { color: #00ff41; }
+        .stat-glow { background: radial-gradient(circle, #00ff41 0%, transparent 70%); }
+        border-color: rgba(0, 255, 65, 0.3);
+      }
+      
+      &.confirmed {
+        .stat-number { color: #0080ff; text-shadow: 0 0 15px rgba(0, 128, 255, 0.6); }
+        .stat-label { color: #0080ff; }
+        .stat-glow { background: radial-gradient(circle, #0080ff 0%, transparent 70%); }
+        border-color: rgba(0, 128, 255, 0.3);
+      }
+      
+      &.available {
+        .stat-number { color: #ffaa00; text-shadow: 0 0 15px rgba(255, 170, 0, 0.6); }
+        .stat-label { color: #ffaa00; }
+        .stat-glow { background: radial-gradient(circle, #ffaa00 0%, transparent 70%); }
+        border-color: rgba(255, 170, 0, 0.3);
+      }
+      
+      &.total {
+        .stat-number { color: #ff0080; text-shadow: 0 0 15px rgba(255, 0, 128, 0.6); }
+        .stat-label { color: #ff0080; }
+        .stat-glow { background: radial-gradient(circle, #ff0080 0%, transparent 70%); }
+        border-color: rgba(255, 0, 128, 0.3);
+      }
+    }
+  }
+  
+  // 粒子背景
+  .particle-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -1;
+    
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: radial-gradient(circle, rgba(0, 255, 65, 0.8) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: floatingParticle 6s linear infinite;
+      
+      &:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+      &:nth-child(2) { top: 20%; left: 80%; animation-delay: 1s; }
+      &:nth-child(3) { top: 70%; left: 20%; animation-delay: 2s; }
+      &:nth-child(4) { top: 80%; left: 70%; animation-delay: 3s; }
+      &:nth-child(5) { top: 40%; left: 50%; animation-delay: 4s; }
+    }
+  }
+}
+
+// 控制面板
+.control-panel {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+  justify-content: center;
+  
+  .cyber-button {
+    background: linear-gradient(135deg, rgba(0, 255, 65, 0.1) 0%, rgba(0, 128, 255, 0.1) 100%);
+    border: 2px solid rgba(0, 255, 65, 0.3);
+    color: #00ff41;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    height: 48px;
+    padding: 0 24px;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: linear-gradient(135deg, rgba(0, 255, 65, 0.2) 0%, rgba(0, 128, 255, 0.2) 100%);
+      box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+      transform: translateY(-2px);
+    }
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s;
+    }
+    
+    &:hover::before {
+      left: 100%;
+    }
+  }
+}
+
+// 3D座位网格容器
+.seat-grid-container {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(26, 26, 46, 0.9) 100%);
+  border: 2px solid rgba(0, 255, 65, 0.2);
+  border-radius: 24px;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(5px);
+  perspective: 1200px;
+  
+  // 讲台 3D
+  .podium-3d {
+    background: linear-gradient(135deg, #ff0080 0%, #8000ff 100%);
+    border: 2px solid rgba(255, 0, 128, 0.5);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 0 auto 32px;
+    width: 200px;
+    text-align: center;
+    position: relative;
+    transform: rotateX(15deg);
+    box-shadow: 
+      0 8px 24px rgba(255, 0, 128, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    
+    .podium-label {
+      font-family: 'Orbitron', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    }
+    
+    .podium-glow {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255, 0, 128, 0.2) 0%, transparent 70%);
+      animation: podiumGlow 3s ease-in-out infinite alternate;
+    }
+  }
+  
+  // 3D座位网格
+  .seat-grid-3d {
+    transform-style: preserve-3d;
+    transform: rotateX(25deg);
+    
+    .seat-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+      
+      .row-label {
+        font-family: 'Orbitron', monospace;
+        font-size: 18px;
+        font-weight: 700;
+        color: #00ff41;
+        text-shadow: 0 0 10px rgba(0, 255, 65, 0.6);
+        width: 40px;
+        text-align: center;
+        margin-right: 16px;
+      }
+      
+      .seats {
+        display: flex;
+        gap: 12px;
+        
+        .aisle {
+          width: 24px;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.3), transparent);
+          margin: 0 8px;
+          position: relative;
+          top: 20px;
+        }
+      }
+    }
+  }
+  
+  // 环境光效
+  .ambient-lighting {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: 
+      radial-gradient(circle at 20% 20%, rgba(0, 255, 65, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(0, 128, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(255, 0, 128, 0.05) 0%, transparent 60%);
+    animation: ambientPulse 6s ease-in-out infinite alternate;
+  }
+}
+
+// 单个座位样式
+.seat {
+  width: 48px;
+  height: 48px;
+  position: relative;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  
+  .seat-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    backdrop-filter: blur(5px);
+    
+    .seat-number {
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      opacity: 0.8;
+    }
+    
+    .seat-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding-top: 8px;
+      
+      .seat-student {
+        .ant-avatar {
+          border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+      }
+      
+      .seat-icon {
+        font-size: 16px;
+      }
+    }
+    
+    .seat-confirmed-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #00ff41;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #000;
+      box-shadow: 0 0 8px rgba(0, 255, 65, 0.6);
+    }
+  }
+  
+  // 座位状态样式
+  &.available {
+    .seat-inner {
+      border-color: rgba(255, 170, 0, 0.6);
+      background: linear-gradient(135deg, rgba(255, 170, 0, 0.1) 0%, rgba(255, 170, 0, 0.05) 100%);
+      
+      .seat-number, .seat-icon { color: #ffaa00; }
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(255, 170, 0, 0.1) 0%, transparent 70%);
+        animation: availableGlow 2s ease-in-out infinite alternate;
+      }
+    }
+  }
+  
+  &.occupied {
+    .seat-inner {
+      border-color: rgba(0, 255, 65, 0.8);
+      background: linear-gradient(135deg, rgba(0, 255, 65, 0.2) 0%, rgba(0, 255, 65, 0.1) 100%);
+      
+      .seat-number { color: #00ff41; }
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(0, 255, 65, 0.2) 0%, transparent 70%);
+        animation: occupiedPulse 1.5s ease-in-out infinite alternate;
+      }
+    }
+  }
+  
+  &.reserved {
+    .seat-inner {
+      border-color: rgba(0, 128, 255, 0.6);
+      background: linear-gradient(135deg, rgba(0, 128, 255, 0.1) 0%, rgba(0, 128, 255, 0.05) 100%);
+      
+      .seat-number, .seat-icon { color: #0080ff; }
+    }
+  }
+  
+  &.unavailable {
+    .seat-inner {
+      border-color: rgba(255, 64, 64, 0.6);
+      background: linear-gradient(135deg, rgba(255, 64, 64, 0.1) 0%, rgba(255, 64, 64, 0.05) 100%);
+      opacity: 0.5;
+      
+      .seat-number, .seat-icon { color: #ff4040; }
+    }
+    
+    cursor: not-allowed;
+  }
+  
+  &.confirmed {
+    .seat-inner {
+      box-shadow: 0 0 16px rgba(0, 255, 65, 0.6);
+    }
+  }
+  
+  &.clickable {
+    &:hover {
+      transform: translateY(-4px) rotateX(10deg);
+      
+      .seat-inner {
+        box-shadow: 
+          0 8px 16px rgba(0, 0, 0, 0.3),
+          0 0 20px rgba(0, 255, 65, 0.4);
+      }
+    }
+  }
+}
+
+// 赛博朋克模态框
+.cyber-modal {
+  .ant-modal-content {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(26, 26, 46, 0.95) 100%);
+    border: 2px solid rgba(0, 255, 65, 0.3);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+  }
+  
+  .ant-modal-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+    
+    .modal-title-cyber {
+      font-family: 'Orbitron', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: #00ff41;
+      text-shadow: 0 0 10px rgba(0, 255, 65, 0.6);
+    }
+  }
+  
+  .ant-modal-body {
+    .student-selector {
+      padding: 24px;
+      text-align: center;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+  }
+  
+  .ant-modal-close {
+    color: rgba(255, 255, 255, 0.6);
+    
+    &:hover {
+      color: #ff4040;
+    }
+  }
+}
+
+// 动画定义
+@keyframes titleGlow {
+  0% { text-shadow: 0 0 20px rgba(0, 255, 65, 0.8); }
+  100% { text-shadow: 0 0 30px rgba(0, 255, 65, 1), 0 0 40px rgba(0, 255, 65, 0.6); }
+}
+
+@keyframes statGlow {
+  0% { opacity: 0.1; }
+  100% { opacity: 0.2; }
+}
+
+@keyframes floatingParticle {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { transform: translateY(-20px) rotate(360deg); opacity: 1; }
+}
+
+@keyframes podiumGlow {
+  0% { opacity: 0.2; }
+  100% { opacity: 0.4; }
+}
+
+@keyframes ambientPulse {
+  0% { opacity: 0.3; }
+  100% { opacity: 0.6; }
+}
+
+@keyframes backgroundPulse {
+  0% { opacity: 0.1; }
+  50% { opacity: 0.15; }
+  100% { opacity: 0.1; }
+}
+
+@keyframes availableGlow {
+  0% { opacity: 0.1; }
+  100% { opacity: 0.3; }
+}
+
+@keyframes occupiedPulse {
+  0% { opacity: 0.2; transform: scale(1); }
+  100% { opacity: 0.4; transform: scale(1.05); }
+}
+
+// 响应式设计
+@media (max-width: 1200px) {
+  .holographic-dashboard {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .seat-map-container {
+    padding: 16px;
+  }
+  
+  .holographic-dashboard {
+    padding: 24px;
+    
+    .dashboard-title {
+      font-size: 24px;
+    }
+    
+    .stats-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
+  
+  .control-panel {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .seat-grid-container {
+    padding: 24px;
+    
+    .seat-grid-3d {
+      transform: rotateX(15deg);
+    }
+  }
+  
+  .seat {
+    width: 40px;
+    height: 40px;
+  }
+}
