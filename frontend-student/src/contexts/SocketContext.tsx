@@ -35,11 +35,15 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      // 创建socket连接
+      // 创建socket连接到classrooms namespace
       const newSocket = io(
-        process.env.REACT_APP_API_URL?.replace("/api", "") ||
-          "http://localhost:3000",
+        (process.env.REACT_APP_API_URL?.replace("/api", "") ||
+          "http://localhost:3000") + "/classrooms",
         {
+          query: {
+            userId: user.id,
+            userType: user.role || 'student'
+          },
           auth: {
             token: localStorage.getItem("access_token"),
           },

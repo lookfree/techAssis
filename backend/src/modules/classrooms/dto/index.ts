@@ -236,6 +236,11 @@ export class SeatSelectionDto {
   @IsString()
   name: string;
 
+  @ApiProperty({ description: '考勤记录ID', required: false })
+  @IsOptional()
+  @IsString()
+  attendanceId?: string;
+
   @ApiProperty({ description: '验证照片URL', required: false })
   @IsOptional()
   @IsString()

@@ -32,25 +32,21 @@ export class AttendanceService {
       throw new ForbiddenException('无权管理此课程考勤');
     }
 
-    // 检查是否已有同节次签到
-    // 获取今天的开始时间和结束时间用于查询
+    // 检查是否已有同节次的AttendanceSession
     const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    const sessionDate = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const timeSlot = `${sessionData.sessionNumber || 1}`; // 将sessionNumber转换为timeSlot字符串
     
-    const existingSession = await this.prisma.attendance.findFirst({
+    const existingAttendanceSession = await this.prisma.attendanceSession.findFirst({
       where: {
         courseId,
-        sessionNumber: sessionData.sessionNumber,
-        sessionDate: {
-          gte: startOfDay,
-          lt: endOfDay
-        }
+        sessionDate,
+        timeSlot
       }
     });
 
-    if (existingSession) {
-      throw new BadRequestException('该节次签到已存在');
+    if (existingAttendanceSession) {
+      throw new BadRequestException('该节次签到会话已存在');
     }
 
     // 获取选课学生列表
@@ -71,6 +67,55 @@ export class AttendanceService {
       }
     });
 
+    // 🔧 关键修复：先创建AttendanceSession记录，需要设置默认教室ID
+    // 为了座位签到，需要有一个默认的教室ID，这里先用一个固定的教室
+    const defaultClassroomId = 'classroom-default-001';
+    
+    // 尝试查找现有教室或创建一个默认教室
+    let classroom = await this.prisma.classroom.findFirst({
+      where: { name: 'A101 - 阶梯教室' }
+    });
+    
+    if (!classroom) {
+      // 创建默认教室
+      classroom = await this.prisma.classroom.create({
+        data: {
+          name: 'A101 - 阶梯教室',
+          capacity: 100,
+          rows: 10,
+          seatsPerRow: 10,
+          type: 'lecture_hall',
+          layout: 'standard',
+          seatMapEnabled: true,
+          freeSeatingEnabled: true,
+          location: '教学楼A栋',
+          building: 'A',
+          room: '101'
+        }
+      });
+      
+      // 初始化座位图
+      await this.initializeSeatMapForClassroom(classroom.id, classroom.rows, classroom.seatsPerRow);
+    }
+
+    const attendanceSession = await this.prisma.attendanceSession.create({
+      data: {
+        courseId,
+        classroomId: classroom.id, // 🔧 关键修复：设置教室ID
+        sessionDate,
+        timeSlot,
+        sessionNumber: timeSlot,
+        status: 'active',
+        method: sessionData.checkInMethod as any, // 映射到CheckInMethod枚举
+        totalStudents: enrollments.length,
+        checkedInStudents: 0,
+        startTime: new Date(),
+        autoCloseMinutes: sessionData.duration || 30,
+        verificationCode: sessionData.verificationCode,
+        qrCode: sessionData.qrCode,
+      }
+    });
+
     // 为所有学生创建考勤记录（默认缺勤）
     const attendanceRecords = await Promise.all(
       enrollments.map(enrollment =>
@@ -88,21 +133,22 @@ export class AttendanceService {
       )
     );
 
-    // 创建签到会话记录（用于管理签到状态）
-    const sessionRecord = {
-      courseId,
-      sessionNumber: sessionData.sessionNumber,
-      checkInMethod: sessionData.checkInMethod,
-      startTime: new Date(),
-      duration: sessionData.duration || 30, // 默认30分钟
-      verificationCode: sessionData.verificationCode,
-      qrCode: sessionData.qrCode,
-      studentsCount: enrollments.length,
-      checkedInCount: 0
-    };
-
     return {
-      session: sessionRecord,
+      session: {
+        id: attendanceSession.id, // 返回AttendanceSession的ID
+        courseId: attendanceSession.courseId,
+        sessionNumber: sessionData.sessionNumber,
+        sessionDate: attendanceSession.sessionDate,
+        timeSlot: attendanceSession.timeSlot,
+        checkInMethod: sessionData.checkInMethod,
+        startTime: attendanceSession.startTime,
+        duration: sessionData.duration || 30,
+        verificationCode: sessionData.verificationCode,
+        qrCode: sessionData.qrCode,
+        status: 'active',
+        studentsCount: enrollments.length,
+        checkedInCount: 0
+      },
       studentsCount: enrollments.length,
       message: '签到已启动'
     };
@@ -662,16 +708,14 @@ export class AttendanceService {
   // 获取今日签到会话
   async getTodaySession(courseId: string) {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+    const sessionDate = today.toISOString().split('T')[0]; // YYYY-MM-DD format
 
-    const attendance = await this.prisma.attendance.findFirst({
+    // 🔧 修复：查找AttendanceSession表而不是Attendance表
+    const attendanceSession = await this.prisma.attendanceSession.findFirst({
       where: {
         courseId,
-        sessionDate: {
-          gte: today,
-          lt: tomorrow
-        }
+        sessionDate,
+        status: 'active' // 只返回活跃的会话
       },
       include: {
         course: {
@@ -687,28 +731,33 @@ export class AttendanceService {
         }
       },
       orderBy: {
-        sessionNumber: 'desc'
+        createdAt: 'desc'
       }
     });
 
-    if (!attendance) {
+    if (!attendanceSession) {
       return null;
     }
 
     return {
-      id: attendance.id,
-      courseId: attendance.courseId,
-      sessionNumber: attendance.sessionNumber,
-      sessionDate: attendance.sessionDate,
-      checkInMethod: attendance.checkInMethod,
-      status: 'active', // 简化状态管理
-      course: attendance.course
+      id: attendanceSession.id, // AttendanceSession的ID
+      courseId: attendanceSession.courseId,
+      sessionNumber: parseInt(attendanceSession.sessionNumber || '1'),
+      sessionDate: attendanceSession.sessionDate,
+      timeSlot: attendanceSession.timeSlot,
+      checkInMethod: attendanceSession.method,
+      status: attendanceSession.status,
+      course: attendanceSession.course,
+      totalStudents: attendanceSession.totalStudents,
+      checkedInStudents: attendanceSession.checkedInStudents,
+      startTime: attendanceSession.startTime
     };
   }
 
   // 获取签到会话信息
   async getSession(sessionId: string) {
-    const attendance = await this.prisma.attendance.findUnique({
+    // 🔧 修复：查找AttendanceSession表而不是Attendance表
+    const attendanceSession = await this.prisma.attendanceSession.findUnique({
       where: { id: sessionId },
       include: {
         course: {
@@ -725,18 +774,22 @@ export class AttendanceService {
       }
     });
 
-    if (!attendance) {
-      throw new NotFoundException('签到会话不存在');
+    if (!attendanceSession) {
+      throw new NotFoundException(`签到会话不存在。查找的SessionID: ${sessionId}。请检查该签到会话是否存在于 AttendanceSession 表中。`);
     }
 
     return {
-      id: attendance.id,
-      courseId: attendance.courseId,
-      sessionNumber: attendance.sessionNumber,
-      sessionDate: attendance.sessionDate,
-      checkInMethod: attendance.checkInMethod,
-      status: attendance.status,
-      course: attendance.course
+      id: attendanceSession.id,
+      courseId: attendanceSession.courseId,
+      sessionNumber: parseInt(attendanceSession.sessionNumber || '1'),
+      sessionDate: attendanceSession.sessionDate,
+      timeSlot: attendanceSession.timeSlot,
+      checkInMethod: attendanceSession.method,
+      status: attendanceSession.status,
+      course: attendanceSession.course,
+      totalStudents: attendanceSession.totalStudents,
+      checkedInStudents: attendanceSession.checkedInStudents,
+      startTime: attendanceSession.startTime
     };
   }
 
@@ -925,5 +978,187 @@ export class AttendanceService {
         excusedStudents: stats.excused
       }
     };
+  }
+
+  // 查找或创建学生当前课程考勤记录
+  async findOrCreateCurrentAttendanceRecord(studentId: string, courseId: string) {
+    // 验证学生和课程的存在以及学生是否已注册该课程
+    const enrollment = await this.prisma.enrollment.findUnique({
+      where: {
+        studentId_courseId: {
+          studentId,
+          courseId
+        }
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            studentId: true
+          }
+        },
+        course: {
+          select: {
+            id: true,
+            name: true,
+            courseCode: true,
+            teacher: {
+              select: {
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!enrollment) {
+      throw new NotFoundException('学生未注册此课程或课程不存在');
+    }
+
+    // 查找当前活跃的考勤会话 (今天的最新会话)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+
+    // 首先尝试查找现有的考勤记录
+    const existingAttendance = await this.prisma.attendance.findFirst({
+      where: {
+        studentId,
+        courseId,
+        sessionDate: {
+          gte: today,
+          lt: tomorrow
+        }
+      },
+      include: {
+        course: {
+          select: {
+            id: true,
+            name: true,
+            courseCode: true,
+            teacher: {
+              select: {
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            studentId: true
+          }
+        }
+      },
+      orderBy: {
+        sessionNumber: 'desc'
+      }
+    });
+
+    if (existingAttendance) {
+      return existingAttendance;
+    }
+
+    // 如果没有找到现有记录，查找今天是否有任何考勤会话
+    const anyTodayAttendance = await this.prisma.attendance.findFirst({
+      where: {
+        courseId,
+        sessionDate: {
+          gte: today,
+          lt: tomorrow
+        }
+      },
+      orderBy: {
+        sessionNumber: 'desc'
+      }
+    });
+
+    // 确定会话号码
+    let sessionNumber = 1; // 默认会话号
+    if (anyTodayAttendance) {
+      sessionNumber = anyTodayAttendance.sessionNumber;
+    } else {
+      // 如果今天没有任何考勤会话，生成一个基于时间的会话号
+      const now = new Date();
+      sessionNumber = parseInt(now.toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }).replace(':', ''));
+    }
+
+    // 如果没有找到现有记录且没有活跃会话，抛出异常
+    if (!anyTodayAttendance) {
+      throw new NotFoundException('未找到当前课程的活跃考勤会话');
+    }
+
+    // 创建新的考勤记录
+    const newAttendance = await this.prisma.attendance.create({
+      data: {
+        studentId,
+        courseId,
+        sessionDate: today,
+        sessionNumber,
+        status: 'absent', // 默认状态为缺席
+        checkInMethod: 'manual'
+      },
+      include: {
+        course: {
+          select: {
+            id: true,
+            name: true,
+            courseCode: true,
+            teacher: {
+              select: {
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            studentId: true
+          }
+        }
+      }
+    });
+
+    return newAttendance;
+  }
+
+  // 辅助方法：初始化教室座位图
+  private async initializeSeatMapForClassroom(classroomId: string, rows: number, seatsPerRow: number) {
+    const seats: any[] = [];
+    
+    for (let row = 1; row <= rows; row++) {
+      for (let col = 1; col <= seatsPerRow; col++) {
+        const seatNumber = `${String.fromCharCode(64 + row)}${col.toString().padStart(2, '0')}`;
+        seats.push({
+          classroomId,
+          seatNumber,
+          row,
+          column: col,
+          status: 'available',
+          seatType: 'regular',
+        });
+      }
+    }
+    
+    // 批量创建座位
+    await this.prisma.seatMap.createMany({
+      data: seats,
+      skipDuplicates: true
+    });
   }
 }

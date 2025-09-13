@@ -138,21 +138,102 @@ const SeatSelection: React.FC = () => {
 
   return (
     <div className="seat-selection-container">
-      {/* 头部导航 */}
-      <div className="seat-selection-header">
-        <Button 
-          type="text" 
-          icon={<ArrowLeftOutlined />} 
-          onClick={handleGoBack}
-          className="back-button"
-        >
-          返回
-        </Button>
-        <div className="header-content">
-          <h2 className="course-title">{course.name}</h2>
-          <p className="course-info">
-            {course.courseCode} | {course.teacher.firstName}{course.teacher.lastName}
-          </p>
+      {/* 酷炫头部导航 */}
+      <div style={{ 
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        padding: '32px',
+        borderRadius: '16px',
+        color: 'white',
+        boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
+        marginBottom: '24px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* 背景装饰 */}
+        <div style={{
+          position: 'absolute',
+          top: '-50%',
+          right: '-50%',
+          width: '200%',
+          height: '200%',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)',
+          backgroundSize: '20px 20px',
+          animation: 'float 20s ease-in-out infinite',
+        }}></div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+          <Button 
+            type="text" 
+            icon={<ArrowLeftOutlined />} 
+            onClick={handleGoBack}
+            style={{
+              color: 'white',
+              fontSize: '16px',
+              height: '40px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '20px',
+              padding: '0 20px'
+            }}
+          >
+            返回课程
+          </Button>
+          
+          <div style={{ flex: 1, textAlign: 'center', margin: '0 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+              <div style={{
+                fontSize: '48px',
+                background: 'rgba(255, 255, 255, 0.2)',
+                padding: '16px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                🎯
+              </div>
+              <div>
+                <h1 style={{ 
+                  color: 'white', 
+                  margin: 0, 
+                  fontSize: '28px', 
+                  fontWeight: 'bold',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                }}>
+                  {course.name}
+                </h1>
+                <p style={{ 
+                  color: 'rgba(255, 255, 255, 0.9)', 
+                  fontSize: '16px',
+                  margin: '8px 0 0 0'
+                }}>
+                  {course.courseCode} | 👨‍🏫 {course.teacher.firstName}{course.teacher.lastName}
+                </p>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px', justifyContent: 'center' }}>
+                  <div style={{ 
+                    background: 'rgba(255, 255, 255, 0.2)', 
+                    padding: '6px 14px', 
+                    borderRadius: '16px', 
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}>
+                    📍 智能选座
+                  </div>
+                  <div style={{ 
+                    background: 'rgba(255, 255, 255, 0.2)', 
+                    padding: '6px 14px', 
+                    borderRadius: '16px', 
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}>
+                    ⚡ 实时签到
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div style={{ width: '120px' }}></div>
         </div>
       </div>
 

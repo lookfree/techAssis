@@ -29,6 +29,9 @@ export interface CheckInSession {
   qrCodeUrl?: string;
   location?: any;
   attendanceRecords: any[];
+  startTime?: string;
+  totalStudents?: number;
+  checkedInStudents?: number;
 }
 
 /**

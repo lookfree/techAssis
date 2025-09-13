@@ -30,12 +30,68 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [isConnected, setIsConnected] = React.useState(false);
 
   useEffect(() => {
-    // WebSocket functionality disabled until backend Socket.io implementation is ready
-    // TODO: Enable WebSocket connections when backend WebSocket gateway is implemented
-    
+    if (!isAuthenticated || !user) {
+      // 未认证时断开连接
+      if (socketRef.current) {
+        console.log('🔌 Disconnecting socket (user not authenticated)');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setIsConnected(false);
+      }
+      return;
+    }
+
+    // 已认证时建立连接
+    if (!socketRef.current) {
+      console.log('🚀 Connecting to WebSocket server...');
+      
+      const socket = io('http://localhost:3000/classrooms', {
+        transports: ['websocket'],
+        query: {
+          userId: user.id,
+          userType: user.role || 'teacher'
+        },
+        auth: {
+          token: localStorage.getItem('token') // 传递JWT token
+        }
+      });
+
+      socket.on('connect', () => {
+        console.log('✅ Socket connected:', socket.id);
+        setIsConnected(true);
+        
+        // 显示连接成功提示
+        message.success({
+          content: '实时连接已建立',
+          duration: 2,
+          key: 'socket-connection'
+        });
+      });
+
+      socket.on('disconnect', () => {
+        console.log('❌ Socket disconnected');
+        setIsConnected(false);
+      });
+
+      socket.on('connect_error', (error) => {
+        console.error('🔴 Socket connection error:', error);
+        setIsConnected(false);
+        
+        // 显示连接失败提示
+        message.warning({
+          content: '实时连接失败，部分功能可能受影响',
+          duration: 3,
+          key: 'socket-connection-error'
+        });
+      });
+
+      socketRef.current = socket;
+    }
+
     // Clean up function
     return () => {
       if (socketRef.current) {
+        console.log('🔌 Cleaning up socket connection');
         socketRef.current.disconnect();
         socketRef.current = null;
         setIsConnected(false);

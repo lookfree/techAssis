@@ -217,7 +217,7 @@ export class ClassroomsController {
     return this.classroomsService.selectSeat(sessionId, seatSelectionDto);
   }
 
-  @Get('session/:sessionId/seat-map')
+  @Get('sessions/:sessionId/seat-map')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '获取签到会话的座位图' })
   @ApiResponse({ status: 200, description: '获取座位图成功' })
@@ -232,7 +232,7 @@ export class ClassroomsController {
     return this.classroomsService.getSessionSeatMapBySessionId(sessionId, courseId, defaultDate, defaultTimeSlot);
   }
 
-  @Post('session/:sessionId/cancel-seat')
+  @Post('sessions/:sessionId/cancel-seat')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '取消座位选择' })
   @ApiResponse({ status: 200, description: '取消座位成功' })

@@ -492,9 +492,27 @@ const Attendance: React.FC = () => {
               onClick={() => setCreateSessionVisible(true)}
               disabled={!selectedCourse}
               size="large"
-              style={{ height: '40px', fontSize: '16px' }}
+              style={{ 
+                height: '48px', 
+                fontSize: '18px', 
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                border: 'none',
+                borderRadius: '24px',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                transition: 'all 0.3s ease',
+                padding: '0 32px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0px)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
+              }}
             >
-              🚀 发起签到
+              🚀 发起智能签到
             </Button>
             <Button
               icon={<DownloadOutlined />}

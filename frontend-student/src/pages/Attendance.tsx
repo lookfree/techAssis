@@ -399,6 +399,7 @@ const Attendance: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("checkin");
+  const [studentSeats, setStudentSeats] = useState<{[courseId: string]: any}>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -414,6 +415,49 @@ const Attendance: React.FC = () => {
       ]);
       setAttendanceRecords(attendanceRes);
       setCourses(coursesRes);
+      
+      // 检查每个课程的座位状态
+      const seatStatus: {[courseId: string]: any} = {};
+      for (const course of coursesRes) {
+        // 检查所有启用签到的课程，不仅仅是活跃的
+        if (course.attendanceEnabled) {
+          try {
+            // 获取今日的签到会话
+            const sessionRes = await request.get(`/attendance/sessions/today/${course.id}`);
+            if (sessionRes) {
+              // 获取学生信息
+              const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+              const studentId = userInfo.studentId || userInfo.username;
+              
+              console.log('Checking seat for student:', studentId, 'in session:', sessionRes.id);
+              
+              // 获取座位图数据
+              const seatMapRes = await request.get(`/classrooms/sessions/${sessionRes.id}/seat-map`);
+              if (seatMapRes && seatMapRes.seats) {
+                // 查找学生的座位
+                const mySeat = seatMapRes.seats.find((seat: any) => 
+                  seat.studentId === studentId && 
+                  (seat.status === 'occupied' || seat.attendanceConfirmed)
+                );
+                
+                console.log('Found seat for student:', mySeat);
+                
+                if (mySeat) {
+                  seatStatus[course.id] = {
+                    seatNumber: mySeat.seatNumber,
+                    confirmed: mySeat.attendanceConfirmed,
+                    sessionId: sessionRes.id,
+                    checkInTime: mySeat.updatedAt || new Date().toISOString()
+                  };
+                }
+              }
+            }
+          } catch (error) {
+            console.log('Failed to load session for course:', course.id, error);
+          }
+        }
+      }
+      setStudentSeats(seatStatus);
     } catch (error: any) {
       Toast.show(error.message || "加载数据失败");
     } finally {
@@ -575,66 +619,159 @@ const Attendance: React.FC = () => {
 
                 {/* 座位签到 */}
                 <div style={{ padding: '20px' }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      padding: '24px',
-                      background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(16, 185, 129, 0.2) 100%)',
-                      borderRadius: '20px',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      border: '1px solid rgba(34, 197, 94, 0.4)',
-                      backdropFilter: 'blur(10px)',
-                      width: '100%',
-                      maxWidth: '300px',
-                      margin: '0 auto'
-                    }}
-                    onClick={() => handleSeatMapCheckin(course)}
-                    onMouseEnter={(e) => {
-                      (e.target as HTMLElement).style.transform = 'translateY(-4px)';
-                      (e.target as HTMLElement).style.boxShadow = '0 15px 40px rgba(34, 197, 94, 0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.target as HTMLElement).style.transform = 'translateY(0)';
-                      (e.target as HTMLElement).style.boxShadow = 'none';
-                    }}
-                  >
-                    <div style={{
-                      width: '80px',
-                      height: '80px',
-                      background: 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: '16px',
-                      fontSize: '36px',
-                      boxShadow: '0 12px 30px rgba(34, 197, 94, 0.4)',
-                      animation: 'pulse 2s infinite'
-                    }}>
-                      🪑
+                  {studentSeats[course.id] ? (
+                    // 已选座位显示
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        padding: '24px',
+                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.4) 0%, rgba(34, 197, 94, 0.3) 100%)',
+                        borderRadius: '20px',
+                        border: '2px solid rgba(34, 197, 94, 0.6)',
+                        backdropFilter: 'blur(10px)',
+                        width: '100%',
+                        maxWidth: '300px',
+                        margin: '0 auto',
+                        boxShadow: '0 10px 30px rgba(34, 197, 94, 0.3)'
+                      }}
+                    >
+                      <div style={{
+                        width: '80px',
+                        height: '80px',
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '16px',
+                        fontSize: '36px',
+                        boxShadow: '0 12px 30px rgba(34, 197, 94, 0.5)',
+                        position: 'relative'
+                      }}>
+                        ✅
+                        <div style={{
+                          position: 'absolute',
+                          top: '-5px',
+                          right: '-5px',
+                          width: '28px',
+                          height: '28px',
+                          background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '16px',
+                          boxShadow: '0 4px 12px rgba(251, 191, 36, 0.5)',
+                          border: '2px solid white'
+                        }}>
+                          👑
+                        </div>
+                      </div>
+                      <div style={{
+                        fontSize: '20px',
+                        fontWeight: 'bold',
+                        color: 'white',
+                        textAlign: 'center',
+                        textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                        marginBottom: '12px'
+                      }}>
+                        已签到成功
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 16px',
+                        background: 'rgba(255,255,255,0.2)',
+                        borderRadius: '20px',
+                        border: '1px solid rgba(255,255,255,0.3)'
+                      }}>
+                        <span style={{
+                          fontSize: '24px'
+                        }}>🪑</span>
+                        <span style={{
+                          fontSize: '18px',
+                          fontWeight: '600',
+                          color: 'white',
+                          textShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                        }}>
+                          座位 {studentSeats[course.id].seatNumber}
+                        </span>
+                      </div>
+                      <div style={{
+                        marginTop: '12px',
+                        fontSize: '13px',
+                        color: 'rgba(255,255,255,0.9)',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                      }}>
+                        签到时间：{new Date(studentSeats[course.id].checkInTime).toLocaleTimeString('zh-CN')}
+                      </div>
                     </div>
-                    <div style={{
-                      fontSize: '18px',
-                      fontWeight: 'bold',
-                      color: 'white',
-                      textAlign: 'center',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                      marginBottom: '8px'
-                    }}>
-                      座位签到
+                  ) : (
+                    // 未选座位显示
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        padding: '24px',
+                        background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(16, 185, 129, 0.2) 100%)',
+                        borderRadius: '20px',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        border: '1px solid rgba(34, 197, 94, 0.4)',
+                        backdropFilter: 'blur(10px)',
+                        width: '100%',
+                        maxWidth: '300px',
+                        margin: '0 auto'
+                      }}
+                      onClick={() => handleSeatMapCheckin(course)}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
+                        (e.currentTarget as HTMLElement).style.boxShadow = '0 15px 40px rgba(34, 197, 94, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                        (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                      }}
+                    >
+                      <div style={{
+                        width: '80px',
+                        height: '80px',
+                        background: 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '16px',
+                        fontSize: '36px',
+                        boxShadow: '0 12px 30px rgba(34, 197, 94, 0.4)',
+                        animation: 'pulse 2s infinite'
+                      }}>
+                        🪑
+                      </div>
+                      <div style={{
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        color: 'white',
+                        textAlign: 'center',
+                        textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                        marginBottom: '8px'
+                      }}>
+                        座位签到
+                      </div>
+                      <div style={{
+                        fontSize: '14px',
+                        color: 'rgba(255,255,255,0.9)',
+                        textAlign: 'center',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                      }}>
+                        点击选择座位进行签到
+                      </div>
                     </div>
-                    <div style={{
-                      fontSize: '14px',
-                      color: 'rgba(255,255,255,0.9)',
-                      textAlign: 'center',
-                      textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-                    }}>
-                      点击选择座位进行签到
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             ))}

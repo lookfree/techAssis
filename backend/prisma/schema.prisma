@@ -36,7 +36,7 @@ model User {
   gradedBy        Grade[]        @relation("GradedBy")
   grades          Grade[]        @relation("StudentGrades")
   notifications   Notification[] @relation("UserNotifications")
-  seatMaps        SeatMap[]      @relation("StudentSeats")
+  // Removed seatMaps relation - studentId now stores student number directly
   submissions     Submission[]   @relation("StudentSubmissions")
   studentClass    StudentClass?  @relation("StudentClassMembers", fields: [studentClassId], references: [id])
   operationLogs   OperationLog[] @relation("OperatorLogs")
@@ -65,6 +65,7 @@ model Course {
   teacher           User                @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Cascade)
   enrollments       Enrollment[]        @relation("CourseEnrollments")
   classroomBookings ClassroomBooking[]  @relation("CourseBookings")
+  seatMaps          SeatMap[]           @relation("CourseSeats")
 
   @@map("courses")
 }
@@ -173,11 +174,13 @@ model SeatMap {
   createdAt           DateTime   @default(now()) @map("created_at")
   updatedAt           DateTime   @updatedAt @map("updated_at")
   classroomId         String?    @map("classroom_id")
+  courseId            String?    @map("course_id")
   studentId           String?    @map("student_id")
   classroom           Classroom? @relation("ClassroomSeats", fields: [classroomId], references: [id], onDelete: Cascade)
-  student             User?      @relation("StudentSeats", fields: [studentId], references: [id])
+  course              Course?    @relation("CourseSeats", fields: [courseId], references: [id], onDelete: Cascade)
+  // Removed foreign key constraint - studentId stores student number directly
 
-  @@unique([classroomId, row, column, sessionDate, sessionNumber])
+  @@unique([classroomId, courseId, row, column, sessionDate, sessionNumber])
   @@map("seat_maps")
 }
 

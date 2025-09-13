@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button, message, Tooltip, Avatar, Typography, Modal, Select, Input } from 'antd';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Button, message, Tooltip, Avatar, Typography, Modal, Select } from 'antd';
 import { 
   CheckCircleOutlined, 
   CloseCircleOutlined, 
@@ -13,9 +13,8 @@ import {
 import { useSocket } from '../../contexts/SocketContext';
 import { SeatMapData, SeatMap as SeatMapType, SeatStatus } from '../../types';
 import { request } from '../../services/api';
-import attendanceService, { CheckInMethod } from '../../services/attendanceService';
+import attendanceService, { CheckInMethod, CheckInSession } from '../../services/attendanceService';
 
-const { Text } = Typography;
 
 interface SeatMapProps {
   classroomId: string;
@@ -309,7 +308,7 @@ const SeatMap: React.FC<SeatMapProps> = ({
   const [selectedStudent, setSelectedStudent] = useState<string>('');
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [checkInLoading, setCheckInLoading] = useState(false);
-  const [activeCheckIn, setActiveCheckIn] = useState<any>(null);
+  const [activeCheckIn, setActiveCheckIn] = useState<CheckInSession | null>(null);
   const { socket, addEventListener } = useSocket();
 
   // 加载座位图数据 - 使用实际API数据，失败时使用mock数据
@@ -414,49 +413,161 @@ const SeatMap: React.FC<SeatMapProps> = ({
 
   // 加载当前活跃的签到会话
   const loadActiveCheckIn = useCallback(async () => {
+    if (!courseId) return;
+    
     try {
+      console.log('🔍 检查活跃的签到会话...', courseId);
       const session = await attendanceService.getTodayActiveSession(courseId);
-      if (session && session.checkInMethod === CheckInMethod.SEAT_MAP) {
-        setActiveCheckIn(session);
+      
+      if (session) {
+        console.log('✅ 找到活跃会话:', session);
+        
+        // 检查签到方式是否为座位选择
+        if (session.checkInMethod === CheckInMethod.SEAT_MAP) {
+          setActiveCheckIn(session);
+          
+          // 给用户友好的提示
+          message.success({
+            content: `✨ 检测到进行中的座位签到会话，已自动恢复状态！`,
+            duration: 4,
+            key: 'session-recovery'
+          });
+          
+          console.log('🔄 座位签到会话状态已恢复:', {
+            sessionId: session.id,
+            status: session.status,
+            checkInMethod: session.checkInMethod,
+            startTime: session.startTime || 'N/A',
+            totalStudents: session.totalStudents || 0,
+            checkedInStudents: session.checkedInStudents || 0
+          });
+        } else {
+          console.log('⚠️ 找到活跃会话但非座位签到方式:', session.checkInMethod);
+          setActiveCheckIn(null);
+        }
       } else {
+        console.log('ℹ️ 今日暂无活跃的座位签到会话');
         setActiveCheckIn(null);
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ 加载活跃会话失败:', error);
+      
+      // 如果是网络错误或其他连接问题，给出更详细的信息
+      if (error.code === 'NETWORK_ERROR' || error.message?.includes('fetch')) {
+        console.warn('网络连接异常，无法恢复签到会话状态');
+      } else if (error.response?.status === 404) {
+        // 404是正常情况，说明今日暂无活跃会话
+        console.log('✅ 确认今日暂无活跃签到会话');
+      } else {
+        message.warning('无法检查活跃签到会话状态，请手动刷新页面');
+      }
+      
       setActiveCheckIn(null);
     }
   }, [courseId]);
 
   useEffect(() => {
-    loadSeatMapData();
-    loadActiveCheckIn();
-  }, [loadSeatMapData, loadActiveCheckIn]);
+    // 页面加载时的初始化序列
+    const initialize = async () => {
+      try {
+        // 先加载活跃的签到会话
+        await loadActiveCheckIn();
+        // 再加载座位图数据
+        await loadSeatMapData();
+      } catch (error) {
+        console.error('初始化失败:', error);
+      }
+    };
 
-  // 监听实时座位图更新
+    initialize();
+  }, [courseId]); // 简化依赖，仅依赖 courseId
+
+  // 加入WebSocket房间并监听实时座位图更新
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !classroomId || !sessionDate) return;
 
-    const cleanup = addEventListener('seat_map_update', (data) => {
+    console.log('🏠 Joining classroom WebSocket room:', { classroomId, sessionDate, timeSlot });
+    
+    // 加入教室WebSocket房间
+    socket.emit('join_classroom', {
+      classroomId,
+      sessionDate,
+      timeSlot: timeSlot || 'default'
+    });
+
+    // 监听座位图更新事件
+    const cleanup1 = addEventListener('seat_map_update', (data) => {
+      console.log('📡 Received seat_map_update:', data);
+      
       if (data.classroomId === classroomId && data.sessionDate === sessionDate) {
         setSeatMapData((prevData) => {
           if (!prevData) return prevData;
           
           const updatedSeats = prevData.seats.map((seat) => {
             if (seat.seatId === data.seatId) {
-              return { ...seat, ...data };
+              console.log('🔄 Updating seat:', data.seatId, 'from status:', seat.status, 'to status:', data.status);
+              return { 
+                ...seat, 
+                status: data.status,
+                studentId: data.studentId,
+                attendanceConfirmed: data.attendanceConfirmed 
+              };
             }
             return seat;
           });
           
-          return {
+          const newData = {
             ...prevData,
             seats: updatedSeats,
           };
+          
+          // 强制重新计算统计信息
+          setTimeout(() => {
+            const stats = {
+              total: updatedSeats.length,
+              occupied: updatedSeats.filter((s: any) => s.status === SeatStatus.OCCUPIED).length,
+              available: updatedSeats.filter((s: any) => s.status === SeatStatus.AVAILABLE).length,
+              confirmed: updatedSeats.filter((s: any) => s.attendanceConfirmed).length,
+            };
+            console.log('📊 Updated seat statistics:', stats);
+          }, 100);
+          
+          return newData;
         });
+        
+        // 如果是学生签到，显示通知
+        if (data.status === 'occupied' && data.studentId) {
+          message.success({
+            content: `学生 ${data.studentId} 已选择座位 ${data.seatId}`,
+            duration: 3,
+            key: `seat-occupied-${data.seatId}`
+          });
+        }
       }
     });
 
-    return cleanup;
-  }, [socket, classroomId, sessionDate, addEventListener]);
+    // 监听考勤确认事件
+    const cleanup2 = addEventListener('attendance_confirmed', (data) => {
+      console.log('✅ Attendance confirmed:', data);
+      message.success({
+        content: `学生 ${data.studentId} 在座位 ${data.seatId} 签到成功`,
+        duration: 4,
+        key: `attendance-confirmed-${data.seatId}`
+      });
+    });
+
+    // 离开房间的清理函数
+    return () => {
+      console.log('🏃 Leaving classroom WebSocket room');
+      socket.emit('leave_classroom', {
+        classroomId,
+        sessionDate,
+        timeSlot: timeSlot || 'default'
+      });
+      cleanup1();
+      cleanup2();
+    };
+  }, [socket, classroomId, sessionDate, timeSlot, addEventListener]);
 
   // 处理座位点击
   const handleSeatClick = (seat: SeatMapType) => {
@@ -566,7 +677,16 @@ const SeatMap: React.FC<SeatMapProps> = ({
       
       // 显示更详细的错误信息
       if (error.response) {
-        message.error(`服务器错误: ${error.response.status} - ${error.response.data?.message || error.message}`);
+        const errorMessage = error.response.data?.message || error.message;
+        
+        // 检查是否是签到会话已存在的错误
+        if (errorMessage.includes('签到会话已经存在') || errorMessage.includes('already exists') || errorMessage.includes('Active session')) {
+          message.warning('签到会话已在进行中');
+          // 重新加载活跃签到状态
+          loadActiveCheckIn();
+        } else {
+          message.error(`服务器错误: ${error.response.status} - ${errorMessage}`);
+        }
       } else if (error.request) {
         message.error(`网络连接错误: ${error.message} - 请检查网络连接和后端服务`);
       } else {
@@ -651,8 +771,8 @@ const SeatMap: React.FC<SeatMapProps> = ({
     ));
   };
 
-  // 统计信息
-  const getStats = () => {
+  // 使用 useMemo 确保统计信息实时更新
+  const stats = useMemo(() => {
     if (!seatMapData) return { total: 0, occupied: 0, available: 0, confirmed: 0 };
     
     const { seats } = seatMapData;
@@ -661,10 +781,10 @@ const SeatMap: React.FC<SeatMapProps> = ({
     const available = seats.filter((s: any) => s.status === SeatStatus.AVAILABLE).length;
     const confirmed = seats.filter((s: any) => s.attendanceConfirmed).length;
     
+    console.log('📊 Real-time stats calculation:', { total, occupied, available, confirmed });
+    
     return { total, occupied, available, confirmed };
-  };
-
-  const stats = getStats();
+  }, [seatMapData]);
 
   if (loading) {
     return (
@@ -748,7 +868,7 @@ const SeatMap: React.FC<SeatMapProps> = ({
               loading={checkInLoading}
               onClick={activeCheckIn ? handleEndCheckIn : handleStartCheckIn}
             >
-              {activeCheckIn ? '结束座位签到' : '🪑 开始座位签到'}
+              {checkInLoading ? '处理中...' : (activeCheckIn ? '🛑 结束签到（进行中）' : '🪑 开始座位签到')}
             </Button>
             <Button 
               style={cyberStyles.cyberButton}

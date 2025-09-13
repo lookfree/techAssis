@@ -396,4 +396,23 @@ export class AttendanceController {
       teacherId
     );
   }
+
+  @Get('student/:studentId/course/:courseId/current')
+  @UseGuards(RolesGuard)
+  @Roles('student', 'teacher', 'super_admin', 'department_admin')
+  @ApiOperation({ summary: '获取或创建学生当前课程考勤记录' })
+  @ApiResponse({ status: 200, description: '返回学生的当前考勤记录' })
+  @ApiResponse({ status: 404, description: '未找到活跃的考勤会话' })
+  async getCurrentAttendanceRecord(
+    @Param('studentId') studentId: string,
+    @Param('courseId') courseId: string,
+    @Request() req
+  ) {
+    // 学生只能查看自己的记录
+    if (req.user.role === 'student' && req.user.id !== studentId) {
+      throw new BadRequestException('无权查看他人考勤记录');
+    }
+
+    return this.attendanceService.findOrCreateCurrentAttendanceRecord(studentId, courseId);
+  }
 }

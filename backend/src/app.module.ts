@@ -20,6 +20,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { FilesModule } from './modules/files/files.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ClassroomsModule } from './modules/classrooms/classrooms.module';
+import { StudentsModule } from './modules/students/students.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { ClassroomsModule } from './modules/classrooms/classrooms.module';
     FilesModule,
     NotificationsModule,
     ClassroomsModule,
+    StudentsModule,
   ],
 })
 export class AppModule {}
