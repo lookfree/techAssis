@@ -549,6 +549,7 @@ export class ClassroomsService {
         timeSlot: session.timeSlot,
         seatId: seatSelectionDto.seatNumber,
         studentId: seatSelectionDto.studentId,
+        studentName: seatSelectionDto.name || seatSelectionDto.studentId,
         status: 'occupied',
         attendanceConfirmed: true,
       });
@@ -691,6 +692,7 @@ export class ClassroomsService {
           id: `${classroomId}-${seatNumber}-${sessionDate}-${sessionNumber}`,
           classroomId,
           courseId: courseId, // 包含courseId
+          seatId: seatNumber,  // Frontend expects seatId
           seatNumber,
           studentId: seatStudentId,  // 使用保存的学号
           sessionDate: new Date(sessionDate),

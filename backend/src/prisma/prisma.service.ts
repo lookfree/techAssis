@@ -4,10 +4,25 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
+    // Build DATABASE_URL from individual components if not provided
+    let databaseUrl = process.env.DATABASE_URL;
+
+    if (!databaseUrl && process.env.DATABASE_HOST) {
+      const host = process.env.DATABASE_HOST;
+      const port = process.env.DATABASE_PORT || '5432';
+      const username = process.env.DATABASE_USERNAME || 'postgres';
+      const password = process.env.DATABASE_PASSWORD || '';
+      const database = process.env.DATABASE_NAME || 'smartteacher_db';
+
+      // URL encode the password to handle special characters
+      const encodedPassword = encodeURIComponent(password);
+      databaseUrl = `postgresql://${username}:${encodedPassword}@${host}:${port}/${database}`;
+    }
+
     super({
       datasources: {
         db: {
-          url: process.env.DATABASE_URL,
+          url: databaseUrl,
         },
       },
       // 优化连接池配置

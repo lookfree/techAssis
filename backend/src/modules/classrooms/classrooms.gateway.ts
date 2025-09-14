@@ -20,6 +20,7 @@ interface SeatUpdateData {
   timeSlot?: string;
   seatId: string;
   studentId?: string;
+  studentName?: string;
   status: string;
   attendanceConfirmed?: boolean;
 }
@@ -320,6 +321,19 @@ export class ClassroomsGateway
   // 公共方法：供其他服务调用的座位更新广播
   public broadcastSeatUpdate(data: SeatUpdateData) {
     const roomId = `${data.classroomId}-${data.sessionDate}-${data.timeSlot || 'default'}`;
+    
+    this.logger.log(
+      `Broadcasting seat update to room ${roomId}: seat=${data.seatId}, student=${data.studentId}, status=${data.status}`,
+      'ClassroomsGateway',
+    );
+    
+    // 检查房间中的客户端数量
+    const roomClients = this.classroomSessions.get(roomId);
+    this.logger.log(
+      `Room ${roomId} has ${roomClients?.size || 0} clients connected`,
+      'ClassroomsGateway',
+    );
+    
     this.server.to(roomId).emit('seat_map_update', {
       ...data,
       timestamp: new Date(),

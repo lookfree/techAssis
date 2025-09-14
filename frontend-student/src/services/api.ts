@@ -1,8 +1,18 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
+// 获取环境配置
+const getApiUrl = () => {
+  // 优先使用运行时配置
+  if (window._env_ && window._env_.REACT_APP_API_URL) {
+    return window._env_.REACT_APP_API_URL;
+  }
+  // 其次使用构建时配置
+  return process.env.REACT_APP_API_URL || "http://localhost:3000/api";
+};
+
 // 创建axios实例
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:3000/api",
+  baseURL: getApiUrl(),
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",

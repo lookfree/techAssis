@@ -7,7 +7,10 @@
       "Bash(npm run dev:*)",
       "Bash(npm run:*)",
       "Bash(curl:*)",
-      "Bash(PORT=3001 npm start)"
+      "Bash(PORT=3001 npm start)",
+      "Bash(docker build:*)",
+      "Bash(docker push:*)",
+      "Bash(sshpass -p \"LOOK822621+s\" scp /tmp/smartteacher-backend-amd64-prisma.tar root@60.205.160.74:/tmp/)"
     ],
     "deny": [],
     "ask": []

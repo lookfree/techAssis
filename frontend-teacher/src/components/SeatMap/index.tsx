@@ -11,7 +11,7 @@ import {
   StopOutlined
 } from '@ant-design/icons';
 import { useSocket } from '../../contexts/SocketContext';
-import { SeatMapData, SeatMap as SeatMapType, SeatStatus } from '../../types';
+import { SeatMapData, SeatMap as SeatMapType, SeatStatus, UserRole, UserStatus } from '../../types';
 import { request } from '../../services/api';
 import attendanceService, { CheckInMethod, CheckInSession } from '../../services/attendanceService';
 
@@ -486,14 +486,17 @@ const SeatMap: React.FC<SeatMapProps> = ({
   useEffect(() => {
     if (!socket || !classroomId || !sessionDate) return;
 
-    console.log('🏠 Joining classroom WebSocket room:', { classroomId, sessionDate, timeSlot });
-    
-    // 加入教室WebSocket房间
-    socket.emit('join_classroom', {
+    const roomParams = {
       classroomId,
       sessionDate,
       timeSlot: timeSlot || 'default'
-    });
+    };
+    
+    console.log('🏠 Joining classroom WebSocket room:', roomParams);
+    console.log('Room ID will be:', `${classroomId}-${sessionDate}-${timeSlot || 'default'}`);
+    
+    // 加入教室WebSocket房间
+    socket.emit('join_classroom', roomParams);
 
     // 监听座位图更新事件
     const cleanup1 = addEventListener('seat_map_update', (data) => {
@@ -506,10 +509,31 @@ const SeatMap: React.FC<SeatMapProps> = ({
           const updatedSeats = prevData.seats.map((seat) => {
             if (seat.seatId === data.seatId) {
               console.log('🔄 Updating seat:', data.seatId, 'from status:', seat.status, 'to status:', data.status);
+              
+              // 如果座位被占用，创建或更新学生信息
+              let updatedStudent = seat.student;
+              if (data.status === 'occupied' && data.studentId) {
+                updatedStudent = {
+                  id: data.studentId,
+                  firstName: data.studentName?.charAt(0) || '',
+                  lastName: data.studentName?.slice(1) || data.studentId,
+                  studentId: data.studentId,
+                  email: `${data.studentId}@student.edu`,
+                  role: UserRole.STUDENT,
+                  status: UserStatus.ACTIVE,
+                  avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.studentId}`,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                };
+              } else if (data.status !== 'occupied') {
+                updatedStudent = undefined;
+              }
+              
               return { 
                 ...seat, 
                 status: data.status,
                 studentId: data.studentId,
+                student: updatedStudent,
                 attendanceConfirmed: data.attendanceConfirmed 
               };
             }

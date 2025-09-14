@@ -3,9 +3,7 @@ version: '3.8'
 services:
   # 后端API服务
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: lookfree/smartteacher-backend:latest
     container_name: smartteacher-backend
     environment:
       NODE_ENV: production
@@ -19,9 +17,6 @@ services:
       REFRESH_TOKEN_SECRET: your-super-secret-refresh-token-key
     ports:
       - "3000:3000"
-    depends_on:
-      - postgres
-      - redis
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs
@@ -30,9 +25,7 @@ services:
 
   # 教师端Web应用
   frontend-teacher:
-    build:
-      context: ./frontend-teacher
-      dockerfile: Dockerfile
+    image: lookfree/smartteacher-teacher-frontend:latest
     container_name: smartteacher-teacher-frontend
     environment:
       REACT_APP_API_URL: http://localhost:3000
@@ -46,9 +39,7 @@ services:
 
   # 学生端PWA应用
   frontend-student:
-    build:
-      context: ./frontend-student
-      dockerfile: Dockerfile
+    image: lookfree/smartteacher-student-frontend:latest
     container_name: smartteacher-student-frontend
     environment:
       REACT_APP_API_URL: http://localhost:3000
@@ -60,9 +51,6 @@ services:
     networks:
       - smartteacher-network
 
-volumes:
-  postgres_data:
-  redis_data:
 
 networks:
   smartteacher-network:

@@ -17,7 +17,28 @@ async function bootstrap() {
 
   // 启用CORS
   app.enableCors({
-    origin: clientUrls,
+    origin: (origin, callback) => {
+      // 允许没有origin的请求（比如Postman）
+      if (!origin) return callback(null, true);
+
+      // 允许配置的客户端URL
+      if (clientUrls.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // 在生产环境中，允许服务器IP的请求
+      const allowedPatterns = [
+        /^http:\/\/localhost:\d+$/,
+        /^http:\/\/127\.0\.0\.1:\d+$/,
+        /^http:\/\/60\.205\.160\.74:\d+$/,
+      ];
+
+      if (allowedPatterns.some(pattern => pattern.test(origin))) {
+        return callback(null, true);
+      }
+
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
