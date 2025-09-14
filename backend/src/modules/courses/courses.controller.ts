@@ -56,7 +56,6 @@ export class CoursesController {
       credits: createCourseDto.credits || 3,
       semester: createCourseDto.semester,
       schedule: createCourseDto.schedule,
-      classroom: createCourseDto.classroom,
       capacity: createCourseDto.capacity || 50,
       teacher: { connect: { id: req.user.id } }
     };

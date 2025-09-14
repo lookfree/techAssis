@@ -46,26 +46,35 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       console.log('🚀 Connecting to WebSocket server...');
       
       const socket = io('http://localhost:3000/classrooms', {
-        transports: ['websocket'],
+        transports: ['polling', 'websocket'], // 改变顺序，先尝试polling
         query: {
           userId: user.id,
           userType: user.role || 'teacher'
         },
         auth: {
-          token: localStorage.getItem('token') // 传递JWT token
-        }
+          token: localStorage.getItem('token') || ''
+        },
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
       });
 
       socket.on('connect', () => {
         console.log('✅ Socket connected:', socket.id);
         setIsConnected(true);
-        
+
         // 显示连接成功提示
         message.success({
           content: '实时连接已建立',
           duration: 2,
           key: 'socket-connection'
         });
+      });
+
+      // 监听服务端发送的connected事件
+      socket.on('connected', (data) => {
+        console.log('📨 Received connected event from server:', data);
       });
 
       socket.on('disconnect', () => {
@@ -75,8 +84,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
       socket.on('connect_error', (error) => {
         console.error('🔴 Socket connection error:', error);
+        console.error('Error message:', error.message);
         setIsConnected(false);
-        
+
         // 显示连接失败提示
         message.warning({
           content: '实时连接失败，部分功能可能受影响',

@@ -2,12 +2,22 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
 // 获取环境配置
 const getApiUrl = () => {
-  // 优先使用运行时配置
+  // 优先使用运行时配置（生产环境）
   if (window._env_ && window._env_.REACT_APP_API_URL) {
-    return window._env_.REACT_APP_API_URL;
+    const baseUrl = window._env_.REACT_APP_API_URL;
+    // 如果URL不以/api结尾，则添加/api
+    return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
   }
-  // 其次使用构建时配置
-  return process.env.REACT_APP_API_URL || "http://localhost:3000/api";
+
+  // 其次使用构建时配置（开发环境）
+  const envUrl = process.env.REACT_APP_API_URL;
+  if (envUrl) {
+    // 如果URL不以/api结尾，则添加/api
+    return envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+  }
+
+  // 默认配置
+  return "http://localhost:3000/api";
 };
 
 // 创建axios实例

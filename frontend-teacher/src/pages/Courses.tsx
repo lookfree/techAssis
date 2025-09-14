@@ -159,24 +159,37 @@ const CourseList: React.FC = () => {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      const { dateRange, ...formData } = values;
-      
+      const { dateRange, academicYear, maxStudents, attendanceEnabled, assignmentEnabled, ...formData } = values;
+
       if (dateRange) {
         formData.startDate = dateRange[0].toISOString();
         formData.endDate = dateRange[1].toISOString();
       }
 
+      // 构建符合后端要求的数据结构
+      const courseData = {
+        name: formData.name,
+        courseCode: formData.courseCode,
+        description: formData.description,
+        credits: formData.credits || 3,
+        semester: formData.semester,
+        capacity: maxStudents || 50,  // 使用 capacity 而不是 maxStudents
+        schedule: formData.schedule,
+        status: formData.status,
+      };
+
       if (editingCourse) {
-        await request.put(`/courses/${editingCourse.id}`, formData);
+        await request.put(`/courses/${editingCourse.id}`, courseData);
         message.success('更新成功');
       } else {
-        await request.post('/courses', formData);
+        await request.post('/courses', courseData);
         message.success('创建成功');
       }
 
       setModalVisible(false);
       loadCourses();
     } catch (error) {
+      console.error('提交失败:', error);
       message.error(editingCourse ? '更新失败' : '创建失败');
     }
   };

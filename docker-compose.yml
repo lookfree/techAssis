@@ -28,8 +28,8 @@ services:
     image: lookfree/smartteacher-teacher-frontend:latest
     container_name: smartteacher-teacher-frontend
     environment:
-      REACT_APP_API_URL: http://localhost:3000
-      REACT_APP_WS_URL: ws://localhost:3000
+      REACT_APP_API_URL: http://60.205.160.74:3000
+      REACT_APP_WS_URL: ws://60.205.160.74:3000
     ports:
       - "3001:80"
     depends_on:
@@ -42,8 +42,8 @@ services:
     image: lookfree/smartteacher-student-frontend:latest
     container_name: smartteacher-student-frontend
     environment:
-      REACT_APP_API_URL: http://localhost:3000
-      REACT_APP_WS_URL: ws://localhost:3000
+      REACT_APP_API_URL: http://60.205.160.74:3000
+      REACT_APP_WS_URL: ws://60.205.160.74:3000
     ports:
       - "3002:80"
     depends_on:

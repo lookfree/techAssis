@@ -35,9 +35,11 @@ interface ClassroomStatusData {
 @WebSocketGateway({
   namespace: 'classrooms',
   cors: {
-    origin: '*',
+    origin: true,
     credentials: true,
+    methods: ['GET', 'POST'],
   },
+  transports: ['websocket', 'polling'],
 })
 export class ClassroomsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
@@ -60,12 +62,32 @@ export class ClassroomsGateway
 
   handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`, 'ClassroomsGateway');
-    
+
     // 从handshake中获取用户信息
     const userId = client.handshake.query.userId as string;
+    const userType = client.handshake.query.userType as string;
+
+    // 获取认证token（Socket.io v3+使用auth对象）
+    const token = client.handshake.auth?.token;
+
+    // 在开发环境下，如果没有token也允许连接（向后兼容）
+    if (process.env.NODE_ENV === 'production' && !token) {
+      this.logger.warn(`Connection rejected: No auth token provided for ${userId}`, 'ClassroomsGateway');
+      client.disconnect(true);
+      return;
+    }
+
+    this.logger.log(`User connected: ${userId} (${userType}) with token: ${token ? 'yes' : 'no'}`, 'ClassroomsGateway');
+
     if (userId) {
       this.userSockets.set(userId, client.id);
     }
+
+    // 发送连接成功消息
+    client.emit('connected', {
+      message: 'Successfully connected to classrooms WebSocket',
+      socketId: client.id
+    });
   }
 
   handleDisconnect(client: Socket) {
