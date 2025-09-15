@@ -44,15 +44,19 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     // 已认证时建立连接
     if (!socketRef.current) {
       console.log('🚀 Connecting to WebSocket server...');
-      
-      const socket = io('http://localhost:3000/classrooms', {
+
+      const token = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
+      console.log('🔑 Token for WebSocket:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
+
+      const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:3000';
+      const socket = io(`${wsUrl.replace('ws://', 'http://').replace('wss://', 'https://')}/classrooms`, {
         transports: ['polling', 'websocket'], // 改变顺序，先尝试polling
         query: {
           userId: user.id,
           userType: user.role || 'teacher'
         },
         auth: {
-          token: localStorage.getItem('token') || ''
+          token: token
         },
         reconnection: true,
         reconnectionAttempts: 5,

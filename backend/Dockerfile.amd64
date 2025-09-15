@@ -1,5 +1,5 @@
-# 构建阶段
-FROM node:18-alpine AS builder
+# 使用 Ubuntu 作为基础镜像以避免 Alpine 的 OpenSSL 兼容性问题
+FROM node:18-bullseye-slim AS builder
 
 WORKDIR /app
 
@@ -19,25 +19,23 @@ COPY . .
 # 构建应用
 RUN npm run build
 
-# 运行阶段
-FROM node:18-alpine
+# 运行阶段 - 也使用 Ubuntu 以确保兼容性
+FROM node:18-bullseye-slim
 
 WORKDIR /app
 
-# 安装OpenSSL和必要的库，以及构建依赖
-RUN apk add --no-cache openssl libc6-compat
+# 安装必要的运行时依赖
+RUN apt-get update && apt-get install -y \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
 
-# 复制package文件
-COPY package*.json ./
-
-# 只安装生产依赖
-RUN npm ci --only=production && npm cache clean --force
-
-# 从构建阶段复制构建结果和Prisma客户端
+# 从构建阶段复制所有node_modules（包括生产和开发依赖）
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/prisma ./prisma
+
+# 复制package.json
+COPY package*.json ./
 
 # 复制其他必要文件
 COPY healthcheck.js ./

@@ -178,11 +178,23 @@ const CourseList: React.FC = () => {
         status: formData.status,
       };
 
+      // 确保只发送后端期望的字段
+      const cleanCourseData = {
+        name: courseData.name,
+        courseCode: courseData.courseCode,
+        description: courseData.description,
+        credits: courseData.credits,
+        semester: courseData.semester,
+        capacity: courseData.capacity,
+        schedule: courseData.schedule,
+        status: courseData.status
+      };
+
       if (editingCourse) {
-        await request.put(`/courses/${editingCourse.id}`, courseData);
+        await request.put(`/courses/${editingCourse.id}`, cleanCourseData);
         message.success('更新成功');
       } else {
-        await request.post('/courses', courseData);
+        await request.post('/courses', cleanCourseData);
         message.success('创建成功');
       }
 
