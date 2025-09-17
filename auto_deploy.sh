@@ -3,10 +3,15 @@
 # 设置超时时间
 set timeout 300
 
-# 远程服务器信息
-set host "60.205.160.74"
-set username "root"
-set password "LOOK822621+1s"
+# 从环境变量读取服务器信息
+set host [lindex $argv 0]
+set username [lindex $argv 1]
+set password [lindex $argv 2]
+
+if {$host == "" || $username == "" || $password == ""} {
+    puts "使用方法: ./auto_deploy.sh <host> <username> <password>"
+    exit 1
+}
 
 # 连接SSH
 spawn ssh $username@$host

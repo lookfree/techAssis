@@ -217,8 +217,9 @@ Content-Type: application/json
 ### Q1: 数据库连接失败
 **A**: 检查 `.env` 文件中的数据库配置：
 ```
-DATABASE_URL="postgresql://postgres:uro%40%23wet8332%40@60.205.160.74:5432/smartteacher_db?schema=public"
+DATABASE_URL="postgresql://username:password@host:port/database?schema=public"
 ```
+确保使用正确的数据库连接信息
 
 ### Q2: 文件上传失败
 **A**: 确保上传目录存在且有写权限：

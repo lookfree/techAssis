@@ -1,10 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 
 async function main() {
+  // 从环境变量读取数据库连接
   const prisma = new PrismaClient({
     datasources: {
       db: {
-        url: 'postgresql://postgres:uro%40%23wet8332%40@60.205.160.74:5432/smartteacher_db'
+        url: process.env.DATABASE_URL || 'postgresql://username:password@localhost:5432/database'
       }
     }
   });

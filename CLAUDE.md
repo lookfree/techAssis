@@ -88,17 +88,19 @@ The repository currently contains planning and specification documents:
 
 ## Database Configuration
 
-According to the specifications, the system will use:
+According to the specifications, the system will use PostgreSQL database with the following configuration:
 
 ```
 PostgreSQL Database:
-- Host: 60.205.160.74
-- Port: 5432 (default)
-- Database: smartteacher_db
-- Username: postgres
-- Password: uro@#wet8332@
+- Host: [configured via environment variable]
+- Port: [configured via environment variable]
+- Database: [configured via environment variable]
+- Username: [configured via environment variable]
+- Password: [configured via environment variable]
 - Connection Pool: min: 10, max: 100
 ```
+
+Note: Actual database credentials should be configured in the `.env` file (not tracked in version control)
 
 ## Environment Setup (When Implementation Begins)
 

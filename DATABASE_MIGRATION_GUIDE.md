@@ -58,7 +58,7 @@ backend/
 1. **环境配置**
    ```bash
    # 设置数据库连接字符串
-   export DATABASE_URL="postgresql://postgres:uro@#wet8332@@60.205.160.74:5432/smartteacher_db"
+   export DATABASE_URL="postgresql://username:password@host:port/database"
    ```
 
 2. **依赖安装**
@@ -221,7 +221,7 @@ pnpm prisma generate
 ### 1. 数据备份
 ```bash
 # 备份数据库
-pg_dump -h 60.205.160.74 -p 5432 -U postgres smartteacher_db > backup.sql
+pg_dump -h <host> -p <port> -U <username> <database> > backup.sql
 ```
 
 ### 2. 敏感数据

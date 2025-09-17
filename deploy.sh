@@ -1,11 +1,16 @@
 #!/bin/bash
 
-# 远程服务器信息
-HOST="60.205.160.74"
-USERNAME="root"
+# 从环境变量或参数读取服务器信息
+HOST="${DEPLOY_HOST:-$1}"
+USERNAME="${DEPLOY_USER:-$2}"
+
+if [ -z "$HOST" ] || [ -z "$USERNAME" ]; then
+    echo "使用方法: ./deploy.sh <host> <username>"
+    echo "或设置环境变量: DEPLOY_HOST 和 DEPLOY_USER"
+    exit 1
+fi
 
 echo "正在连接到远程服务器 $HOST..."
-echo "请输入密码: LOOK822621+1s"
 
 # SSH到远程服务器并执行docker pull命令
 ssh $USERNAME@$HOST << 'EOF'

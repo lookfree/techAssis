@@ -7,14 +7,14 @@ services:
     container_name: smartteacher-backend
     environment:
       NODE_ENV: production
-      DATABASE_HOST: 60.205.160.74:5432
-      DATABASE_PORT: 5432
-      DATABASE_USERNAME: postgres
-      DATABASE_PASSWORD: uro@#wet8332@
-      DATABASE_NAME: smartteacher_db
+      DATABASE_HOST: ${DB_HOST}
+      DATABASE_PORT: ${DB_PORT:-5432}
+      DATABASE_USERNAME: ${DB_USERNAME}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      DATABASE_NAME: ${DB_NAME}
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
-      REFRESH_TOKEN_SECRET: your-super-secret-refresh-token-key
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-key}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:-change-this-refresh-secret}
     ports:
       - "3000:3000"
     volumes:
@@ -28,8 +28,8 @@ services:
     image: lookfree/smartteacher-teacher-frontend:latest
     container_name: smartteacher-teacher-frontend
     environment:
-      REACT_APP_API_URL: http://60.205.160.74:3000
-      REACT_APP_WS_URL: ws://60.205.160.74:3000
+      REACT_APP_API_URL: ${API_URL:-http://localhost:3000}
+      REACT_APP_WS_URL: ${WS_URL:-ws://localhost:3000}
     ports:
       - "3001:80"
     depends_on:
@@ -42,8 +42,8 @@ services:
     image: lookfree/smartteacher-student-frontend:latest
     container_name: smartteacher-student-frontend
     environment:
-      REACT_APP_API_URL: http://60.205.160.74:3000
-      REACT_APP_WS_URL: ws://60.205.160.74:3000
+      REACT_APP_API_URL: ${API_URL:-http://localhost:3000}
+      REACT_APP_WS_URL: ${WS_URL:-ws://localhost:3000}
     ports:
       - "3002:80"
     depends_on:
